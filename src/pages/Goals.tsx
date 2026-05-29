@@ -86,7 +86,9 @@ export function Goals() {
         )}
 
         <div className="space-y-4">
-          {data.goals.map((g) => {
+          {[...data.goals]
+            .sort((a, b) => a.targetDate.localeCompare(b.targetDate))
+            .map((g) => {
             const p = goalProgress(g, total);
             if (editingId === g.id) {
               return (

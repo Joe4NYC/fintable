@@ -60,7 +60,9 @@ export function Dashboard() {
 
         <Card title="財務目標" subtitle="達成進度" className="lg:col-span-2">
           <div className="space-y-5">
-            {goals.map((g) => {
+            {[...goals]
+              .sort((a, b) => a.targetDate.localeCompare(b.targetDate))
+              .map((g) => {
               const p = goalProgress(g, total);
               return (
                 <div key={g.id}>
