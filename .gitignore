@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+
+# 私人資料（含真實財務數字）— 切勿提交
+private/
+public/vault.json
+
+# 原始 Google Sheet PDF（含真實數字）
+*.pdf
+
+# TS build cache
+tsconfig.tsbuildinfo
