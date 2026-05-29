@@ -53,7 +53,8 @@ export interface GoalProgress {
 export function goalProgress(goal: Goal, currentAssets: number, today = new Date()): GoalProgress {
   const achievementRatio = goal.targetAmount === 0 ? 0 : currentAssets / goal.targetAmount;
   const toGo = goal.targetAmount - currentAssets;
-  const target = new Date(goal.targetDate + 'T00:00:00');
+  // 穩健解析：支援 "2027-01-01" 或完整日期字串；無效則 daysLeft = NaN
+  const target = new Date(goal.targetDate);
   const daysLeft = Math.round((target.getTime() - today.getTime()) / 86400000);
   return { achievementRatio, toGo, daysLeft };
 }

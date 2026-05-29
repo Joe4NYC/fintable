@@ -136,10 +136,11 @@ function readAll() {
 }
 
 function toDateStr(v) {
-  if (v instanceof Date) {
+  // 用方法偵測而非 instanceof（跨執行環境較穩健）
+  if (v && typeof v.getFullYear === 'function') {
     const y = v.getFullYear();
-    const m = String(v.getMonth() + 1).padStart(2, '0');
-    const d = String(v.getDate()).padStart(2, '0');
+    const m = ('0' + (v.getMonth() + 1)).slice(-2);
+    const d = ('0' + v.getDate()).slice(-2);
     return y + '-' + m + '-' + d;
   }
   return String(v || '').trim();
@@ -173,11 +174,18 @@ function writeAll(data) {
       .setValues((data.monthly || []).map((m) => [String(m.month), num(m.income), num(m.expense), String(m.note || '')]));
   }
 
-  writeTable(
-    TABS.goals,
-    ['名稱', '目標金額', '目標日期'],
-    (data.goals || []).map((g) => [String(g.name || ''), num(g.targetAmount), String(g.targetDate || '')])
-  );
+  const goalsSh = sheetByName(TABS.goals, ['名稱', '目標金額', '目標日期']);
+  if (goalsSh.getMaxRows() > 1)
+    goalsSh.getRange(2, 1, goalsSh.getMaxRows() - 1, goalsSh.getMaxColumns()).clearContent();
+  const goalRows = (data.goals || []).map((g) => [
+    String(g.name || ''),
+    num(g.targetAmount),
+    String(g.targetDate || ''),
+  ]);
+  if (goalRows.length) {
+    goalsSh.getRange(2, 3, goalRows.length, 1).setNumberFormat('@'); // 日期欄存為文字
+    goalsSh.getRange(2, 1, goalRows.length, 3).setValues(goalRows);
+  }
 
   const budgetRows = []
     .concat((data.budget && data.budget.fixedIncome) || [])

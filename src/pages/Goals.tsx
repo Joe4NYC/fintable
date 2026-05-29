@@ -4,7 +4,7 @@ import { ProgressBar } from '../components/ProgressBar';
 import { useFinance } from '../store/FinanceContext';
 import type { Goal } from '../types';
 import { goalProgress, totalAssets } from '../utils/finance';
-import { formatCurrency, formatPercent } from '../utils/format';
+import { formatCurrency, formatDate, formatPercent, parseDateMs } from '../utils/format';
 
 const field =
   'rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20';
@@ -20,7 +20,7 @@ function GoalForm({
 }) {
   const [name, setName] = useState(initial?.name ?? '');
   const [targetAmount, setTargetAmount] = useState(String(initial?.targetAmount ?? ''));
-  const [targetDate, setTargetDate] = useState(initial?.targetDate ?? '');
+  const [targetDate, setTargetDate] = useState(initial ? formatDate(initial.targetDate) : '');
 
   return (
     <form
@@ -87,7 +87,7 @@ export function Goals() {
 
         <div className="space-y-4">
           {[...data.goals]
-            .sort((a, b) => a.targetDate.localeCompare(b.targetDate))
+            .sort((a, b) => parseDateMs(a.targetDate) - parseDateMs(b.targetDate))
             .map((g) => {
             const p = goalProgress(g, total);
             if (editingId === g.id) {
@@ -110,7 +110,7 @@ export function Goals() {
                   <div>
                     <span className="font-semibold text-slate-800">{g.name}</span>
                     <span className="ml-2 text-sm text-slate-400">
-                      目標 {formatCurrency(g.targetAmount, 'HKD')} · {g.targetDate}
+                      目標 {formatCurrency(g.targetAmount, 'HKD')} · {formatDate(g.targetDate)}
                     </span>
                   </div>
                   <div className="whitespace-nowrap">
@@ -136,7 +136,7 @@ export function Goals() {
                   </div>
                   <div>
                     <p className="text-slate-400">剩餘天數</p>
-                    <p className="font-semibold text-slate-700">{p.daysLeft} 日</p>
+                    <p className="font-semibold text-slate-700">{isFinite(p.daysLeft) ? p.daysLeft : '—'} 日</p>
                   </div>
                 </div>
               </div>

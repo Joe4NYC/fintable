@@ -12,7 +12,7 @@ import {
   totalAssets,
   totalLoans,
 } from '../utils/finance';
-import { formatCurrency, formatNumber, formatPercent } from '../utils/format';
+import { formatCurrency, formatNumber, formatPercent, parseDateMs } from '../utils/format';
 
 export function Dashboard() {
   const { data } = useFinance();
@@ -61,7 +61,7 @@ export function Dashboard() {
         <Card title="財務目標" subtitle="達成進度" className="lg:col-span-2">
           <div className="space-y-5">
             {[...goals]
-              .sort((a, b) => a.targetDate.localeCompare(b.targetDate))
+              .sort((a, b) => parseDateMs(a.targetDate) - parseDateMs(b.targetDate))
               .map((g) => {
               const p = goalProgress(g, total);
               return (
@@ -81,7 +81,7 @@ export function Dashboard() {
                         {formatCurrency(Math.abs(p.toGo), 'HKD')}
                       </strong>
                     </span>
-                    <span>剩餘 <strong className="text-slate-700">{p.daysLeft}</strong> 日</span>
+                    <span>剩餘 <strong className="text-slate-700">{isFinite(p.daysLeft) ? p.daysLeft : '—'}</strong> 日</span>
                   </div>
                 </div>
               );
