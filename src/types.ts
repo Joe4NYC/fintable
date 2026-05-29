@@ -25,8 +25,7 @@ export interface Loan {
 
 export interface Assets {
   investmentTotal: number; // 投資組合總額
-  investmentRatio: number; // 投資佔比 0-1
-  cashRatio: number; // 現金佔比 0-1
+  liquidCash: number; // 流動現金總額（含緊急後備金）
   emergencyFund: number; // 緊急後備金
   loans: Loan[];
 }

@@ -127,8 +127,7 @@ function readAll() {
     budget: { fixedIncome: fixedIncome, fixedExpense: fixedExpense },
     assets: {
       investmentTotal: aMap.investmentTotal || 0,
-      investmentRatio: aMap.investmentRatio || 0,
-      cashRatio: aMap.cashRatio || 0,
+      liquidCash: aMap.liquidCash || 0,
       emergencyFund: aMap.emergencyFund || 0,
       loans: loans,
     },
@@ -198,8 +197,7 @@ function writeAll(data) {
   const a = data.assets || {};
   writeTable(TABS.assets, ['項目', '數值'], [
     ['investmentTotal', num(a.investmentTotal)],
-    ['investmentRatio', num(a.investmentRatio)],
-    ['cashRatio', num(a.cashRatio)],
+    ['liquidCash', num(a.liquidCash)],
     ['emergencyFund', num(a.emergencyFund)],
   ]);
 

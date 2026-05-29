@@ -12,8 +12,7 @@ export const seedData: FinanceData = {
   },
   assets: {
     investmentTotal: 0,
-    investmentRatio: 0,
-    cashRatio: 0,
+    liquidCash: 0,
     emergencyFund: 0,
     loans: [],
   },

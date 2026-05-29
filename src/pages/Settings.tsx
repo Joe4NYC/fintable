@@ -5,6 +5,7 @@ import { useAuthOptional } from '../store/VaultGate';
 import { useSync } from '../store/CloudProvider';
 import { ping, push, setCloudConfig } from '../store/cloud';
 import { isVault } from '../utils/crypto';
+import { formatCurrency } from '../utils/format';
 import type { FinanceData } from '../types';
 
 const field =
@@ -206,20 +207,19 @@ export function Settings() {
             <input type="number" defaultValue={a.investmentTotal} onBlur={(e) => setAssets({ investmentTotal: num(e.target.value) })} className={field} />
           </label>
           <label className="flex flex-col gap-1 text-xs text-slate-500">
+            流動現金總額（含緊急後備金）
+            <input type="number" defaultValue={a.liquidCash} onBlur={(e) => setAssets({ liquidCash: num(e.target.value) })} className={field} />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-slate-500">
             緊急後備金
             <input type="number" defaultValue={a.emergencyFund} onBlur={(e) => setAssets({ emergencyFund: num(e.target.value) })} className={field} />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-500">
-            投資佔比（%）
-            <input type="number" defaultValue={Math.round(a.investmentRatio * 1000) / 10} onBlur={(e) => {
-              const inv = num(e.target.value) / 100;
-              setAssets({ investmentRatio: inv, cashRatio: Math.max(0, 1 - inv) });
-            }} className={field} />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-500">
-            現金佔比（%，自動 = 100 − 投資）
-            <input type="number" value={Math.round(a.cashRatio * 1000) / 10} readOnly className={`${field} bg-slate-50 text-slate-400`} />
-          </label>
+          <div className="flex flex-col justify-end gap-1 text-xs text-slate-400">
+            總資產 = 投資組合 +（流動現金 − 緊急後備金）
+            <span className="text-sm font-semibold text-slate-700">
+              {formatCurrency(a.investmentTotal + ((a.liquidCash || 0) - a.emergencyFund), 'HKD')}
+            </span>
+          </div>
         </div>
         <div className="mt-4">
           <h3 className="mb-2 text-sm font-semibold text-slate-700">借貸</h3>

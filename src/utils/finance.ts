@@ -14,9 +14,9 @@ export function totalLoans(assets: Assets): number {
   return assets.loans.reduce((acc, l) => acc + l.amount, 0);
 }
 
-// 總資產：投資組合 + 緊急後備金
+// 總資產：投資組合總額 +（流動現金總額 − 緊急後備金）
 export function totalAssets(assets: Assets): number {
-  return assets.investmentTotal + assets.emergencyFund;
+  return assets.investmentTotal + ((assets.liquidCash || 0) - assets.emergencyFund);
 }
 
 // 淨資產：總資產 − 借貸
@@ -25,11 +25,11 @@ export function netAssets(assets: Assets): number {
 }
 
 export function investmentAmount(assets: Assets): number {
-  return assets.investmentTotal * assets.investmentRatio;
+  return assets.investmentTotal;
 }
 
 export function cashAmount(assets: Assets): number {
-  return assets.investmentTotal * assets.cashRatio;
+  return assets.liquidCash || 0;
 }
 
 export function averageIncome(monthly: MonthlyRecord[]): number {
@@ -64,10 +64,10 @@ export function disposable(fixedIncome: BudgetItem[], fixedExpense: BudgetItem[]
   return sum(fixedIncome) - sum(fixedExpense);
 }
 
-// 日常流動資金可撐月數 = 淨可動用現金 /（月支出）
+// 日常流動資金可撐月數 = 流動現金總額 /（月支出）
 export function runwayMonths(data: FinanceData): number {
   const avgMonthExpense = averageExpense(data.monthly);
-  const liquid = cashAmount(data.assets) + data.assets.emergencyFund;
+  const liquid = data.assets.liquidCash || 0;
   if (avgMonthExpense === 0) return 0;
   return liquid / avgMonthExpense;
 }

@@ -24,11 +24,14 @@ export function Dashboard() {
   const cash = cashAmount(assets);
   const loans = totalLoans(assets);
   const runway = runwayMonths(data);
+  const allocTotal = invest + cash;
+  const investRatio = allocTotal ? invest / allocTotal : 0;
+  const cashRatio = allocTotal ? cash / allocTotal : 0;
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile label="總資產" value={formatCurrency(total, 'HKD')} hint="投資組合 + 緊急後備金" />
+        <StatTile label="總資產" value={formatCurrency(total, 'HKD')} hint="投資組合 +（流動現金 − 緊急後備金）" />
         <StatTile label="淨資產" value={formatCurrency(net, 'HKD')} hint="總資產 − 借貸" tone={net >= 0 ? 'positive' : 'negative'} />
         <StatTile label="緊急後備金" value={formatCurrency(assets.emergencyFund, 'HKD')} />
         <StatTile label="日常流動資金" value={`${runway.toFixed(1)} 個月`} hint="可動用現金 ÷ 月支出" />
@@ -47,13 +50,13 @@ export function Dashboard() {
               <span className="flex items-center gap-2 text-slate-600">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand" />投資額
               </span>
-              <span className="tabular-nums">{formatNumber(invest)}（{formatPercent(assets.investmentRatio)}）</span>
+              <span className="tabular-nums">{formatNumber(invest)}（{formatPercent(investRatio)}）</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2 text-slate-600">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-sky-400" />現金額
               </span>
-              <span className="tabular-nums">{formatNumber(cash)}（{formatPercent(assets.cashRatio)}）</span>
+              <span className="tabular-nums">{formatNumber(cash)}（{formatPercent(cashRatio)}）</span>
             </div>
           </div>
         </Card>
