@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useSync } from './store/CloudProvider';
+import type { SyncStatus } from './store/CloudProvider';
 import { Dashboard } from './pages/Dashboard';
 import { Monthly } from './pages/Monthly';
 import { Goals } from './pages/Goals';
@@ -15,6 +17,25 @@ const tabs: { id: TabId; label: string; icon: string }[] = [
   { id: 'settings', label: '設定', icon: '⚙️' },
 ];
 
+const syncLabel: Record<SyncStatus, { text: string; cls: string }> = {
+  loading: { text: '同步中…', cls: 'bg-slate-100 text-slate-500' },
+  syncing: { text: '儲存中…', cls: 'bg-amber-100 text-amber-700' },
+  synced: { text: '已同步', cls: 'bg-emerald-100 text-emerald-700' },
+  offline: { text: '離線（用快取）', cls: 'bg-amber-100 text-amber-700' },
+  error: { text: '同步失敗', cls: 'bg-rose-100 text-rose-700' },
+};
+
+function SyncBadge() {
+  const sync = useSync();
+  if (!sync) return null;
+  const s = syncLabel[sync.status];
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${s.cls}`} title={sync.lastError ?? undefined}>
+      ☁ {s.text}
+    </span>
+  );
+}
+
 export default function App() {
   const [tab, setTab] = useState<TabId>('dashboard');
 
@@ -26,6 +47,7 @@ export default function App() {
             <span className="text-xl">📈</span>
             <h1 className="text-lg font-bold text-slate-800">Fintable</h1>
             <span className="text-xs text-slate-400">個人理財</span>
+            <SyncBadge />
           </div>
           <nav className="flex gap-1 overflow-x-auto">
             {tabs.map((t) => (

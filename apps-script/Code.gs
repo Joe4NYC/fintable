@@ -1,0 +1,209 @@
+/**
+ * Fintable — Google Sheet 後端 (Apps Script Web App)
+ *
+ * 部署步驟見專案 README「Google Sheet 自動同步」章節。
+ * 重點：
+ *  1. 改下面的 SECRET 為你自己的密鑰（任意一串字，網站連接時要填一樣的）。
+ *  2. 「部署 → 新增部署作業 → 類型：網頁應用程式」
+ *     - 執行身分：我（你自己）
+ *     - 具存取權的使用者：任何人
+ *  3. 複製產生的 /exec 網址，貼到網站「設定 → 雲端同步」。
+ *
+ * 資料以結構化分頁儲存，你可以直接在 Google Sheet 檢視/編輯。
+ */
+
+const SECRET = '在這裡換成你自己的密鑰';
+
+const TABS = {
+  monthly: '每月收支',
+  goals: '財務目標',
+  budget: '預算',
+  assets: '資產',
+  loans: '借貸',
+  settings: '設定',
+};
+
+function doGet() {
+  return json({ ok: true, service: 'fintable', ts: new Date().toISOString() });
+}
+
+function doPost(e) {
+  try {
+    const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    if (body.token !== SECRET) return json({ ok: false, error: 'unauthorized' });
+
+    if (body.action === 'load') {
+      return json({ ok: true, data: readAll() });
+    }
+    if (body.action === 'save') {
+      writeAll(body.data || {});
+      return json({ ok: true });
+    }
+    return json({ ok: false, error: 'unknown action' });
+  } catch (err) {
+    return json({ ok: false, error: String(err) });
+  }
+}
+
+function json(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(
+    ContentService.MimeType.JSON
+  );
+}
+
+function sheetByName(name, headers) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(name);
+  if (!sh) sh = ss.insertSheet(name);
+  if (headers && headers.length) {
+    sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
+  return sh;
+}
+
+function rows(sh) {
+  const last = sh.getLastRow();
+  const lastCol = sh.getLastColumn();
+  if (last < 2) return [];
+  return sh.getRange(2, 1, last - 1, lastCol).getValues();
+}
+
+function num(v) {
+  const n = Number(v);
+  return isFinite(n) ? n : 0;
+}
+
+// ---------- 讀取 ----------
+function readAll() {
+  const monthlySh = sheetByName(TABS.monthly, ['月份', '收入', '支出', '備註']);
+  const monthly = rows(monthlySh)
+    .filter((r) => String(r[0]).trim() !== '')
+    .map((r, i) => ({
+      id: 'm' + (i + 1),
+      month: String(r[0]).trim(),
+      income: num(r[1]),
+      expense: num(r[2]),
+      note: String(r[3] || ''),
+    }));
+
+  const goalsSh = sheetByName(TABS.goals, ['名稱', '目標金額', '目標日期']);
+  const goals = rows(goalsSh)
+    .filter((r) => String(r[0]).trim() !== '')
+    .map((r, i) => ({
+      id: 'g' + (i + 1),
+      name: String(r[0]).trim(),
+      targetAmount: num(r[1]),
+      targetDate: toDateStr(r[2]),
+    }));
+
+  const budgetSh = sheetByName(TABS.budget, ['類型', '項目', '金額']);
+  const fixedIncome = [];
+  const fixedExpense = [];
+  rows(budgetSh).forEach((r) => {
+    const type = String(r[0]).trim();
+    const item = { name: String(r[1] || '').trim(), amount: num(r[2]) };
+    if (!item.name) return;
+    if (type === '支出') fixedExpense.push(item);
+    else fixedIncome.push(item);
+  });
+
+  const assetsSh = sheetByName(TABS.assets, ['項目', '數值']);
+  const aMap = {};
+  rows(assetsSh).forEach((r) => (aMap[String(r[0]).trim()] = num(r[1])));
+
+  const loansSh = sheetByName(TABS.loans, ['名稱', '金額']);
+  const loans = rows(loansSh)
+    .filter((r) => String(r[0]).trim() !== '')
+    .map((r) => ({ name: String(r[0]).trim(), amount: num(r[1]) }));
+
+  const settingsSh = sheetByName(TABS.settings, ['設定', '值']);
+  const sMap = {};
+  rows(settingsSh).forEach((r) => (sMap[String(r[0]).trim()] = String(r[1] || '').trim()));
+
+  return {
+    settings: { currency: sMap.currency || 'HKD', locale: sMap.locale || 'zh-HK' },
+    goals: goals,
+    monthly: monthly,
+    budget: { fixedIncome: fixedIncome, fixedExpense: fixedExpense },
+    assets: {
+      investmentTotal: aMap.investmentTotal || 0,
+      investmentRatio: aMap.investmentRatio || 0,
+      cashRatio: aMap.cashRatio || 0,
+      emergencyFund: aMap.emergencyFund || 0,
+      loans: loans,
+    },
+  };
+}
+
+function toDateStr(v) {
+  if (v instanceof Date) {
+    const y = v.getFullYear();
+    const m = String(v.getMonth() + 1).padStart(2, '0');
+    const d = String(v.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + d;
+  }
+  return String(v || '').trim();
+}
+
+// ---------- 寫入 ----------
+function writeTable(name, headers, dataRows) {
+  const sh = sheetByName(name, headers);
+  const maxRows = sh.getMaxRows();
+  if (maxRows > 1) sh.getRange(2, 1, maxRows - 1, sh.getMaxColumns()).clearContent();
+  if (dataRows.length) {
+    sh.getRange(2, 1, dataRows.length, headers.length).setValues(dataRows);
+  }
+}
+
+function writeAll(data) {
+  const monthly = (data.monthly || []).map((m) => [
+    "'" + String(m.month), // 前置 ' 強制文字，避免被當日期
+    num(m.income),
+    num(m.expense),
+    String(m.note || ''),
+  ]);
+  // 月份欄設為文字格式
+  const monthlySh = sheetByName(TABS.monthly, ['月份', '收入', '支出', '備註']);
+  if (monthlySh.getMaxRows() > 1)
+    monthlySh.getRange(2, 1, monthlySh.getMaxRows() - 1, monthlySh.getMaxColumns()).clearContent();
+  if (monthly.length) {
+    monthlySh.getRange(2, 1, monthly.length, 1).setNumberFormat('@');
+    monthlySh
+      .getRange(2, 1, monthly.length, 4)
+      .setValues((data.monthly || []).map((m) => [String(m.month), num(m.income), num(m.expense), String(m.note || '')]));
+  }
+
+  writeTable(
+    TABS.goals,
+    ['名稱', '目標金額', '目標日期'],
+    (data.goals || []).map((g) => [String(g.name || ''), num(g.targetAmount), String(g.targetDate || '')])
+  );
+
+  const budgetRows = []
+    .concat((data.budget && data.budget.fixedIncome) || [])
+    .map((it) => ['收入', String(it.name || ''), num(it.amount)])
+    .concat(
+      ((data.budget && data.budget.fixedExpense) || []).map((it) => ['支出', String(it.name || ''), num(it.amount)])
+    );
+  writeTable(TABS.budget, ['類型', '項目', '金額'], budgetRows);
+
+  const a = data.assets || {};
+  writeTable(TABS.assets, ['項目', '數值'], [
+    ['investmentTotal', num(a.investmentTotal)],
+    ['investmentRatio', num(a.investmentRatio)],
+    ['cashRatio', num(a.cashRatio)],
+    ['emergencyFund', num(a.emergencyFund)],
+  ]);
+
+  writeTable(
+    TABS.loans,
+    ['名稱', '金額'],
+    (a.loans || []).map((l) => [String(l.name || ''), num(l.amount)])
+  );
+
+  const s = data.settings || {};
+  writeTable(TABS.settings, ['設定', '值'], [
+    ['currency', String(s.currency || 'HKD')],
+    ['locale', String(s.locale || 'zh-HK')],
+  ]);
+}

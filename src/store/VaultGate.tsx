@@ -32,6 +32,11 @@ export function useAuth() {
   return ctx;
 }
 
+// 雲端模式沒有 AuthContext，回傳 null 而非丟錯
+export function useAuthOptional() {
+  return useContext(AuthContext);
+}
+
 export function VaultGate({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<Status>('loading');
   const [vault, setVault] = useState<Vault | null>(null);

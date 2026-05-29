@@ -43,6 +43,27 @@ npm run build    # 產出 dist/
 
 > 不想把資料（即使加密）放上 repo？也可在線上版用「從加密備份檔還原」，每部裝置匯入一次 `vault.json` 即可，資料只留在該裝置瀏覽器。
 
+## Google Sheet 自動同步（選用）
+
+連接後資料存在你自己的 Google Sheet，**跨裝置自動同步**，也可直接在 Sheet 檢視/編輯。
+
+設定步驟（約 5 分鐘，一次性）：
+
+1. 到 https://sheets.new 新建一張空白 Google Sheet。
+2. 選單 **擴充功能 → Apps Script**，把 `apps-script/Code.gs` 的內容整段貼進去（覆蓋預設程式）。
+3. 把第一行的 `SECRET` 改成你自己的密鑰（任意一串字，例如 `my-secret-123`）。儲存。
+4. 右上 **部署 → 新增部署作業**：
+   - 類型選 **網頁應用程式**
+   - **執行身分：我（你的帳號）**
+   - **具存取權的使用者：任何人**
+   - 按「部署」，第一次會要你授權（用你的 Google 帳號登入同意）。
+5. 複製產生的 **網頁應用程式網址**（以 `/exec` 結尾）。
+6. 回到網站 → **設定 → ☁ 雲端同步** → 貼上網址與密鑰 → 「連接並上傳目前資料」。
+
+之後在任何裝置打開網站都會自動同步；右上角會顯示「☁ 已同步」。
+
+> 安全：資料以明文存在你自己的 Google Sheet（受你的 Google 帳號保護），密鑰存在瀏覽器。這跟你原本用 Google Sheet 的安全程度相同。連接雲端後，網站不再需要密碼鎖。
+
 ## 技術
 
-Vite + React + TypeScript + Tailwind CSS + Recharts。WebCrypto（PBKDF2-SHA256 150k + AES-GCM 256）。
+Vite + React + TypeScript + Tailwind CSS + Recharts。本機模式用 WebCrypto（PBKDF2-SHA256 150k + AES-GCM 256）；雲端模式用 Google Apps Script Web App 讀寫 Google Sheet。

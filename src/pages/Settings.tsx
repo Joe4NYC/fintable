@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react';
 import { Card } from '../components/Card';
 import { useFinance } from '../store/FinanceContext';
-import { useAuth } from '../store/VaultGate';
+import { useAuthOptional } from '../store/VaultGate';
+import { useSync } from '../store/CloudProvider';
+import { ping, push, setCloudConfig } from '../store/cloud';
 import { isVault } from '../utils/crypto';
 import type { FinanceData } from '../types';
 
@@ -20,16 +22,43 @@ function download(filename: string, content: string, type = 'application/json') 
 
 export function Settings() {
   const { data, replaceAll, resetToSeed, setAssets } = useFinance();
-  const { lock, exportVaultBlob, importVault, changePassphrase } = useAuth();
+  const auth = useAuthOptional();
+  const sync = useSync();
   const plainFileRef = useRef<HTMLInputElement>(null);
   const vaultFileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [showChangePass, setShowChangePass] = useState(false);
   const [newPass, setNewPass] = useState('');
   const [newPass2, setNewPass2] = useState('');
+  const [cloudUrl, setCloudUrl] = useState('');
+  const [cloudToken, setCloudToken] = useState('');
+  const [connecting, setConnecting] = useState(false);
+
+  const connectCloud = async () => {
+    const url = cloudUrl.trim();
+    const token = cloudToken.trim();
+    if (!url.startsWith('https://') || !url.includes('/exec')) {
+      return setMsg('❌ 網址應為 Apps Script 的 /exec 結尾網址');
+    }
+    if (!token) return setMsg('❌ 請填入密鑰');
+    setConnecting(true);
+    setMsg('連接中…');
+    try {
+      const cfg = { url, token };
+      await ping(cfg); // 測試連線
+      await push(cfg, data); // 把目前資料上傳到 Sheet 當作初始內容
+      setCloudConfig(cfg);
+      setMsg('✅ 已連接並上傳，重新載入中…');
+      setTimeout(() => location.reload(), 600);
+    } catch (err) {
+      setMsg('❌ 連接失敗：' + String((err as Error).message || err));
+    } finally {
+      setConnecting(false);
+    }
+  };
 
   const exportEncrypted = () => {
-    const blob = exportVaultBlob();
+    const blob = auth?.exportVaultBlob();
     if (!blob) {
       setMsg('❌ 尚無加密資料可匯出');
       return;
@@ -46,7 +75,7 @@ export function Settings() {
       try {
         const parsed = JSON.parse(String(reader.result));
         if (!isVault(parsed)) throw new Error();
-        importVault(parsed); // 會回到鎖定畫面，用該檔的密碼解鎖
+        auth?.importVault(parsed); // 會回到鎖定畫面，用該檔的密碼解鎖
       } catch {
         setMsg('❌ 這不是有效的加密備份檔');
       }
@@ -79,9 +108,10 @@ export function Settings() {
   };
 
   const submitChangePass = async () => {
+    if (!auth) return;
     if (newPass.length < 6) return setMsg('❌ 新密碼至少 6 字元');
     if (newPass !== newPass2) return setMsg('❌ 兩次新密碼不一致');
-    await changePassphrase(newPass, data);
+    await auth.changePassphrase(newPass, data);
     setShowChangePass(false);
     setNewPass('');
     setNewPass2('');
@@ -94,44 +124,80 @@ export function Settings() {
 
   return (
     <div className="space-y-6">
-      <Card title="🔐 安全與加密" subtitle="你的資料以密碼 AES-GCM 加密後才儲存">
-        {msg && <p className="mb-3 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">{msg}</p>}
-        <div className="flex flex-wrap gap-3">
-          <button onClick={exportEncrypted} className={`${btn} bg-brand text-white hover:bg-blue-700`}>
-            匯出加密備份 (vault.json)
-          </button>
-          <button onClick={() => vaultFileRef.current?.click()} className={`${btn} border border-slate-200 text-slate-600 hover:bg-slate-50`}>
-            從加密檔還原
-          </button>
-          <input ref={vaultFileRef} type="file" accept="application/json" onChange={importEncrypted} className="hidden" />
-          <button onClick={() => setShowChangePass((v) => !v)} className={`${btn} border border-slate-200 text-slate-600 hover:bg-slate-50`}>
-            更改密碼
-          </button>
-          <button onClick={lock} className={`${btn} border border-slate-200 text-slate-600 hover:bg-slate-50`}>
-            🔒 立即鎖定
-          </button>
-        </div>
+      {msg && <p className="rounded-lg bg-white px-4 py-3 text-sm text-slate-700 shadow-sm ring-1 ring-slate-200">{msg}</p>}
 
-        {showChangePass && (
-          <div className="mt-4 flex flex-wrap items-end gap-3 rounded-xl bg-slate-50 p-4">
-            <label className="flex flex-col gap-1 text-xs text-slate-500">
-              新密碼
-              <input type="password" value={newPass} onChange={(e) => setNewPass(e.target.value)} className={field} />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-slate-500">
-              再次輸入
-              <input type="password" value={newPass2} onChange={(e) => setNewPass2(e.target.value)} className={field} />
-            </label>
-            <button onClick={submitChangePass} className={`${btn} bg-brand text-white hover:bg-blue-700`}>
-              確認更改
+      <Card title="☁ 雲端同步 (Google Sheet)" subtitle="連接後資料自動同步，跨裝置共用">
+        {sync ? (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-600">
+              狀態：<span className="font-medium text-slate-800">{sync.status === 'synced' ? '已連接，自動同步中 ✅' : sync.status === 'offline' ? '離線（顯示快取）' : sync.status === 'error' ? '同步失敗' : '同步中…'}</span>
+            </p>
+            {sync.lastError && <p className="break-words text-xs text-rose-500">{sync.lastError}</p>}
+            <p className="text-xs text-slate-400">你的資料儲存在自己的 Google Sheet；在網站或 Sheet 任一邊修改都會同步。</p>
+            <button onClick={sync.disconnect} className={`${btn} border border-slate-200 text-slate-600 hover:bg-slate-50`}>
+              中斷連接（改用本機模式）
             </button>
           </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-500">貼上你的 Apps Script 網址與密鑰即可啟用自動同步（設定步驟見 README）。</p>
+            <div className="grid grid-cols-1 gap-3">
+              <label className="flex flex-col gap-1 text-xs text-slate-500">
+                Apps Script 網址（/exec 結尾）
+                <input value={cloudUrl} onChange={(e) => setCloudUrl(e.target.value)} className={field} placeholder="https://script.google.com/macros/s/XXXX/exec" />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-slate-500">
+                密鑰（與 Apps Script 的 SECRET 相同）
+                <input value={cloudToken} onChange={(e) => setCloudToken(e.target.value)} className={field} placeholder="你設定的密鑰" />
+              </label>
+            </div>
+            <button onClick={connectCloud} disabled={connecting} className={`${btn} bg-brand text-white hover:bg-blue-700 disabled:opacity-50`}>
+              {connecting ? '連接中…' : '連接並上傳目前資料'}
+            </button>
+            <p className="text-[11px] leading-relaxed text-slate-400">⚠️ 連接後資料會以明文存在你自己的 Google Sheet（受你的 Google 帳號保護）。密鑰會存在此瀏覽器。</p>
+          </div>
         )}
-
-        <p className="mt-4 text-[11px] leading-relaxed text-slate-400">
-          ⚠️ 密碼無法找回。要在公開網站部署你的資料，請在本機執行 <code className="rounded bg-slate-100 px-1">node scripts/make-vault.mjs</code> 產生 vault.json，或在此匯出加密備份後放到 <code className="rounded bg-slate-100 px-1">public/vault.json</code> 再部署。
-        </p>
       </Card>
+
+      {auth && (
+        <Card title="🔐 安全與加密" subtitle="本機模式：資料以密碼 AES-GCM 加密後才儲存">
+          <div className="flex flex-wrap gap-3">
+            <button onClick={exportEncrypted} className={`${btn} bg-brand text-white hover:bg-blue-700`}>
+              匯出加密備份 (vault.json)
+            </button>
+            <button onClick={() => vaultFileRef.current?.click()} className={`${btn} border border-slate-200 text-slate-600 hover:bg-slate-50`}>
+              從加密檔還原
+            </button>
+            <input ref={vaultFileRef} type="file" accept="application/json" onChange={importEncrypted} className="hidden" />
+            <button onClick={() => setShowChangePass((v) => !v)} className={`${btn} border border-slate-200 text-slate-600 hover:bg-slate-50`}>
+              更改密碼
+            </button>
+            <button onClick={() => auth.lock()} className={`${btn} border border-slate-200 text-slate-600 hover:bg-slate-50`}>
+              🔒 立即鎖定
+            </button>
+          </div>
+
+          {showChangePass && (
+            <div className="mt-4 flex flex-wrap items-end gap-3 rounded-xl bg-slate-50 p-4">
+              <label className="flex flex-col gap-1 text-xs text-slate-500">
+                新密碼
+                <input type="password" value={newPass} onChange={(e) => setNewPass(e.target.value)} className={field} />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-slate-500">
+                再次輸入
+                <input type="password" value={newPass2} onChange={(e) => setNewPass2(e.target.value)} className={field} />
+              </label>
+              <button onClick={submitChangePass} className={`${btn} bg-brand text-white hover:bg-blue-700`}>
+                確認更改
+              </button>
+            </div>
+          )}
+
+          <p className="mt-4 text-[11px] leading-relaxed text-slate-400">
+            ⚠️ 密碼無法找回。要在公開網站部署你的資料，請在本機執行 <code className="rounded bg-slate-100 px-1">node scripts/make-vault.mjs</code> 產生 vault.json，或在此匯出加密備份後放到 <code className="rounded bg-slate-100 px-1">public/vault.json</code> 再部署。
+          </p>
+        </Card>
+      )}
 
       <Card title="資產設定" subtitle="調整資產組合與借貸數值">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
