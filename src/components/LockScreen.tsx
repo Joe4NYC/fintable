@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { isVault } from '../utils/crypto';
 import type { Vault } from '../utils/crypto';
+import { VAULT_KEY } from '../store/vaultStorage';
 
 interface LockScreenProps {
   mode: 'setup' | 'unlock';
@@ -95,14 +96,29 @@ export function LockScreen({ mode, busy, error, onSubmit, onImportVault }: LockS
           </button>
         </form>
 
-        <div className="mt-5 border-t border-slate-100 pt-4 text-center">
+        <div className="mt-5 space-y-2 border-t border-slate-100 pt-4 text-center">
           <button
             onClick={() => fileRef.current?.click()}
-            className="text-xs font-medium text-brand hover:underline"
+            className="block w-full text-xs font-medium text-brand hover:underline"
           >
             從加密備份檔 (vault.json) 還原
           </button>
           <input ref={fileRef} type="file" accept="application/json" onChange={importFile} className="hidden" />
+          <button
+            onClick={() => {
+              if (
+                window.confirm(
+                  '重設此裝置：會清除這部瀏覽器暫存的資料，改用網站附帶的加密資料。\n（不會刪除網站或你的加密備份檔。）確定嗎？'
+                )
+              ) {
+                localStorage.removeItem(VAULT_KEY);
+                location.reload();
+              }
+            }}
+            className="block w-full text-xs text-slate-400 hover:text-slate-600 hover:underline"
+          >
+            資料不對 / 看到空白？重設此裝置
+          </button>
         </div>
 
         {mode === 'setup' && (
