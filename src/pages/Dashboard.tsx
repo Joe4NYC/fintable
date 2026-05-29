@@ -8,7 +8,7 @@ import {
   goalProgress,
   investmentAmount,
   netAssets,
-  runwayYears,
+  runwayMonths,
   totalAssets,
   totalLoans,
 } from '../utils/finance';
@@ -23,7 +23,7 @@ export function Dashboard() {
   const invest = investmentAmount(assets);
   const cash = cashAmount(assets);
   const loans = totalLoans(assets);
-  const runway = runwayYears(data);
+  const runway = runwayMonths(data);
 
   return (
     <div className="space-y-6">
@@ -31,7 +31,7 @@ export function Dashboard() {
         <StatTile label="總資產" value={formatCurrency(total, 'HKD')} hint="投資組合 + 緊急後備金" />
         <StatTile label="淨資產" value={formatCurrency(net, 'HKD')} hint="總資產 − 借貸" tone={net >= 0 ? 'positive' : 'negative'} />
         <StatTile label="緊急後備金" value={formatCurrency(assets.emergencyFund, 'HKD')} />
-        <StatTile label="日常流動資金" value={`${runway.toFixed(1)} 年`} hint="可動用現金 ÷ 年支出" />
+        <StatTile label="日常流動資金" value={`${runway.toFixed(1)} 個月`} hint="可動用現金 ÷ 月支出" />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

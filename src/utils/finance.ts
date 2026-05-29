@@ -63,10 +63,10 @@ export function disposable(fixedIncome: BudgetItem[], fixedExpense: BudgetItem[]
   return sum(fixedIncome) - sum(fixedExpense);
 }
 
-// 日常流動資金可撐年數 = 淨可動用現金 /（年支出）
-export function runwayYears(data: FinanceData): number {
+// 日常流動資金可撐月數 = 淨可動用現金 /（月支出）
+export function runwayMonths(data: FinanceData): number {
   const avgMonthExpense = averageExpense(data.monthly);
   const liquid = cashAmount(data.assets) + data.assets.emergencyFund;
   if (avgMonthExpense === 0) return 0;
-  return liquid / (avgMonthExpense * 12);
+  return liquid / avgMonthExpense;
 }
