@@ -4,7 +4,7 @@ import { StatTile } from '../components/StatTile';
 import { MonthlyForm } from '../components/MonthlyForm';
 import { MonthlyTable } from '../components/MonthlyTable';
 import { IncomeExpenseBar } from '../components/charts/IncomeExpenseBar';
-import { SavingsRatioLine } from '../components/charts/SavingsRatioLine';
+import { CumulativeSavings } from '../components/charts/CumulativeSavings';
 import { useFinance } from '../store/FinanceContext';
 import type { MonthlyRecord } from '../types';
 import { averageExpense, averageIncome } from '../utils/finance';
@@ -50,11 +50,11 @@ export function Monthly() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card title="收入和支出">
+        <Card title="收支與結餘" subtitle="紫線＝每月結餘（收入 − 支出），0 以上代表有盈餘">
           <IncomeExpenseBar monthly={data.monthly} />
         </Card>
-        <Card title="存款比率">
-          <SavingsRatioLine monthly={data.monthly} />
+        <Card title="累計存款趨勢" subtitle="每月結餘一路累加；往上＝持續存錢，走平或下跌＝在花老本">
+          <CumulativeSavings monthly={data.monthly} />
         </Card>
       </div>
 
