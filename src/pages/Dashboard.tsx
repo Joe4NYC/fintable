@@ -65,7 +65,7 @@ export function Dashboard() {
             {[...goals]
               .sort((a, b) => parseDateMs(a.targetDate) - parseDateMs(b.targetDate))
               .map((g) => {
-              const p = goalProgress(g, total);
+              const p = goalProgress(g, net);
               return (
                 <div key={g.id}>
                   <div className="mb-1.5 flex items-baseline justify-between">
