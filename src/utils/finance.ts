@@ -14,9 +14,9 @@ export function totalLoans(assets: Assets): number {
   return assets.loans.reduce((acc, l) => acc + l.amount, 0);
 }
 
-// 總資產：投資組合總額 +（流動現金總額 − 緊急後備金）
+// 總資產：投資組合總額 + 流動現金總額
 export function totalAssets(assets: Assets): number {
-  return assets.investmentTotal + ((assets.liquidCash || 0) - assets.emergencyFund);
+  return assets.investmentTotal + (assets.liquidCash || 0);
 }
 
 // 淨資產：總資產 − 借貸

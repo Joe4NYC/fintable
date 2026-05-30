@@ -128,7 +128,6 @@ function readAll() {
     assets: {
       investmentTotal: aMap.investmentTotal || 0,
       liquidCash: aMap.liquidCash || 0,
-      emergencyFund: aMap.emergencyFund || 0,
       loans: loans,
     },
   };
@@ -198,7 +197,6 @@ function writeAll(data) {
   writeTable(TABS.assets, ['項目', '數值'], [
     ['investmentTotal', num(a.investmentTotal)],
     ['liquidCash', num(a.liquidCash)],
-    ['emergencyFund', num(a.emergencyFund)],
   ]);
 
   writeTable(

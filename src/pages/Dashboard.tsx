@@ -30,11 +30,10 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile label="總資產" value={formatCurrency(total, 'HKD')} hint="投資組合 +（流動現金 − 緊急後備金）" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatTile label="總資產" value={formatCurrency(total, 'HKD')} hint="投資組合 + 流動現金" />
         <StatTile label="淨資產" value={formatCurrency(net, 'HKD')} hint="總資產 − 借貸" tone={net >= 0 ? 'positive' : 'negative'} />
-        <StatTile label="緊急後備金" value={formatCurrency(assets.emergencyFund, 'HKD')} />
-        <StatTile label="日常流動資金" value={`${runway.toFixed(1)} 個月`} hint="可動用現金 ÷ 月支出" />
+        <StatTile label="日常流動資金" value={`${runway.toFixed(1)} 個月`} hint="流動現金 ÷ 月支出" />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 import { getCloudConfig } from './cloud';
 import { CloudProvider } from './CloudProvider';
-import { VaultGate } from './VaultGate';
+import { CloudSetup } from './CloudSetup';
 
-// 有設定 Google Sheet 同步 → 雲端模式（不上鎖）；否則 → 本機加密模式。
+// 只用雲端模式：已連接 Google Sheet → 進入 App；未連接 → 連接畫面。
 export function RootGate({ children }: { children: ReactNode }) {
   if (getCloudConfig()) {
     return <CloudProvider>{children}</CloudProvider>;
   }
-  return <VaultGate>{children}</VaultGate>;
+  return <CloudSetup />;
 }

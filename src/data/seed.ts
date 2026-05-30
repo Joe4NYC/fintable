@@ -1,7 +1,7 @@
 import type { FinanceData } from '../types';
 
 // 公開安全的空白範本：不含任何真實財務數字。
-// 真實資料只透過「加密保險庫」(vault.json / 加密匯入) 載入，明文絕不進入此檔或部署包。
+// 真實資料只存在使用者自己的 Google Sheet；此檔僅作為「清空資料」用的空白範本。
 export const seedData: FinanceData = {
   settings: { currency: 'HKD', locale: 'zh-HK' },
   goals: [{ id: 'g1', name: '我的財務目標', targetAmount: 100000, targetDate: '2027-01-01' }],
@@ -13,7 +13,6 @@ export const seedData: FinanceData = {
   assets: {
     investmentTotal: 0,
     liquidCash: 0,
-    emergencyFund: 0,
     loans: [],
   },
 };

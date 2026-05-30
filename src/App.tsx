@@ -75,7 +75,7 @@ export default function App() {
       </main>
 
       <footer className="mx-auto max-w-5xl px-4 py-6 text-center text-xs text-slate-400">
-        資料儲存在本機瀏覽器 · 記得到「設定」定期匯出備份
+        資料同步在你的 Google Sheet · 記得到「設定」定期匯出備份
       </footer>
     </div>
   );

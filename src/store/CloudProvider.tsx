@@ -90,7 +90,7 @@ export function CloudProvider({ children }: { children: ReactNode }) {
               重試
             </button>
             <button onClick={disconnect} className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">
-              改用本機模式
+              重新輸入連接資料
             </button>
           </div>
         </div>
