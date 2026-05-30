@@ -3,7 +3,7 @@ import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
 import { useFinance } from '../store/FinanceContext';
 import type { Goal } from '../types';
-import { goalProgress, totalAssets } from '../utils/finance';
+import { goalProgress, netAssets } from '../utils/finance';
 import { formatCurrency, formatDate, formatPercent, parseDateMs } from '../utils/format';
 
 const field =
@@ -58,13 +58,13 @@ export function Goals() {
   const { data, addGoal, updateGoal, removeGoal } = useFinance();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
-  const total = totalAssets(data.assets);
+  const total = netAssets(data.assets);
 
   return (
     <div className="space-y-6">
       <Card
         title="財務目標"
-        subtitle={`目前總資產 ${formatCurrency(total, 'HKD')}`}
+        subtitle={`目前淨資產 ${formatCurrency(total, 'HKD')}`}
         action={
           !adding && (
             <button onClick={() => setAdding(true)} className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
