@@ -29,18 +29,26 @@ export function CumulativeSavings({ monthly }: { monthly: MonthlyRecord[] }) {
             <stop offset="100%" stopColor="#10b981" stopOpacity={0.02} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-        <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#64748b' }} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#232c40" vertical={false} />
+        <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#8b97ad' }} />
         <YAxis
-          tick={{ fontSize: 12, fill: '#64748b' }}
+          tick={{ fontSize: 12, fill: '#8b97ad' }}
           tickFormatter={(v) => formatNumber(v as number)}
           width={56}
         />
         <Tooltip
           formatter={(v) => formatNumber(v as number)}
-          contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }}
+          contentStyle={{
+            borderRadius: 12,
+            background: '#141b2d',
+            border: '1px solid #232c40',
+            color: '#e6edf6',
+            fontSize: 12,
+          }}
+          itemStyle={{ color: '#e6edf6' }}
+          cursor={{ stroke: '#5b6678' }}
         />
-        <ReferenceLine y={0} stroke="#94a3b8" />
+        <ReferenceLine y={0} stroke="#5b6678" />
         <Area
           type="monotone"
           dataKey="累計結餘"

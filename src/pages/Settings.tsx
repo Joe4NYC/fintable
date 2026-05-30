@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react';
+import { Cloud, Download, Plus, Trash2, Upload, X } from 'lucide-react';
+import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { fieldClass } from '../components/formStyles';
 import { useFinance } from '../store/FinanceContext';
 import { useSync } from '../store/CloudProvider';
 import { formatCurrency } from '../utils/format';
 import type { FinanceData } from '../types';
 
-const field =
-  'rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20';
+const field = fieldClass;
 
 function download(filename: string, content: string, type = 'application/json') {
   const blob = new Blob([content], { type });
@@ -49,53 +51,60 @@ export function Settings() {
 
   const a = data.assets;
   const num = (v: string) => Number(v) || 0;
-  const btn = 'rounded-lg px-4 py-2 text-sm font-medium';
 
   return (
     <div className="space-y-6">
-      {msg && <p className="rounded-lg bg-white px-4 py-3 text-sm text-slate-700 shadow-sm ring-1 ring-slate-200">{msg}</p>}
+      {msg && (
+        <p className="rounded-lg bg-surface px-4 py-3 text-sm text-content shadow-card ring-1 ring-line">{msg}</p>
+      )}
 
-      <Card title="☁ 雲端同步 (Google Sheet)" subtitle="資料自動同步，跨裝置共用">
+      <Card
+        title="雲端同步 (Google Sheet)"
+        subtitle="資料自動同步，跨裝置共用"
+      >
         <div className="space-y-3">
-          <p className="text-sm text-slate-600">
+          <p className="flex items-center gap-2 text-sm text-content-muted">
+            <Cloud size={16} className="text-brand" />
             狀態：
-            <span className="font-medium text-slate-800">
+            <span className="font-medium text-content">
               {sync?.status === 'synced'
-                ? ' 已連接，自動同步中 ✅'
+                ? '已連接，自動同步中 ✅'
                 : sync?.status === 'offline'
-                ? ' 離線（顯示快取）'
+                ? '離線（顯示快取）'
                 : sync?.status === 'error'
-                ? ' 同步失敗'
-                : ' 同步中…'}
+                ? '同步失敗'
+                : '同步中…'}
             </span>
           </p>
-          {sync?.lastError && <p className="break-words text-xs text-rose-500">{sync.lastError}</p>}
-          <p className="text-xs text-slate-400">你的資料儲存在自己的 Google Sheet；在網站或 Sheet 任一邊修改都會同步。</p>
-          <button onClick={() => sync?.disconnect()} className={`${btn} border border-slate-200 text-slate-600 hover:bg-slate-50`}>
+          {sync?.lastError && <p className="break-words text-xs text-danger">{sync.lastError}</p>}
+          <p className="text-xs text-content-faint">
+            你的資料儲存在自己的 Google Sheet；在網站或 Sheet 任一邊修改都會同步。
+          </p>
+          <Button variant="secondary" onClick={() => sync?.disconnect()}>
             中斷連接（重新輸入連接資料）
-          </button>
+          </Button>
         </div>
       </Card>
 
       <Card title="資產設定" subtitle="調整資產組合與借貸數值">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-xs text-slate-500">
+          <label className="flex flex-col gap-1 text-xs text-content-muted">
             投資組合總額
             <input type="number" defaultValue={a.investmentTotal} onBlur={(e) => setAssets({ investmentTotal: num(e.target.value) })} className={field} />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-500">
+          <label className="flex flex-col gap-1 text-xs text-content-muted">
             流動現金總額
             <input type="number" defaultValue={a.liquidCash} onBlur={(e) => setAssets({ liquidCash: num(e.target.value) })} className={field} />
           </label>
-          <div className="flex flex-col justify-end gap-1 text-xs text-slate-400 sm:col-span-2">
+          <div className="flex flex-col justify-end gap-1 text-xs text-content-faint sm:col-span-2">
             總資產 = 投資組合 + 流動現金
-            <span className="text-sm font-semibold text-slate-700">
+            <span className="text-sm font-semibold text-content">
               {formatCurrency(a.investmentTotal + (a.liquidCash || 0), 'HKD')}
             </span>
           </div>
         </div>
         <div className="mt-4">
-          <h3 className="mb-2 text-sm font-semibold text-slate-700">借貸</h3>
+          <h3 className="mb-2 text-sm font-semibold text-content">借貸</h3>
           <div className="space-y-2">
             {a.loans.map((l, i) => (
               <div key={i} className="flex items-center gap-2">
@@ -111,36 +120,49 @@ export function Settings() {
                   onBlur={(e) => setAssets({ loans: a.loans.map((x, j) => (j === i ? { ...x, amount: num(e.target.value) } : x)) })}
                   className={`${field} w-32 text-right`}
                 />
-                <button onClick={() => setAssets({ loans: a.loans.filter((_, j) => j !== i) })} className="text-xs text-rose-400 hover:text-rose-600">✕</button>
+                <button
+                  onClick={() => setAssets({ loans: a.loans.filter((_, j) => j !== i) })}
+                  className="text-content-faint hover:text-danger"
+                  aria-label="刪除"
+                >
+                  <X size={16} />
+                </button>
               </div>
             ))}
           </div>
-          <button onClick={() => setAssets({ loans: [...a.loans, { name: '', amount: 0 }] })} className="mt-2 text-xs font-medium text-brand hover:underline">
-            + 新增借貸
+          <button
+            onClick={() => setAssets({ loans: [...a.loans, { name: '', amount: 0 }] })}
+            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
+          >
+            <Plus size={14} />
+            新增借貸
           </button>
         </div>
       </Card>
 
       <Card title="備份與重設" subtitle="匯出／匯入 JSON，或清空資料">
         <div className="flex flex-wrap gap-3">
-          <button onClick={exportPlain} className={`${btn} border border-slate-200 text-slate-600 hover:bg-slate-50`}>
+          <Button variant="secondary" onClick={exportPlain}>
+            <Download size={16} />
             匯出 JSON 備份
-          </button>
-          <button onClick={() => plainFileRef.current?.click()} className={`${btn} border border-slate-200 text-slate-600 hover:bg-slate-50`}>
+          </Button>
+          <Button variant="secondary" onClick={() => plainFileRef.current?.click()}>
+            <Upload size={16} />
             匯入 JSON 備份
-          </button>
+          </Button>
           <input ref={plainFileRef} type="file" accept="application/json" onChange={importPlain} className="hidden" />
-          <button
+          <Button
+            variant="danger"
             onClick={() => {
               if (window.confirm('確定要清空為空白範本嗎？目前資料會被覆蓋並同步到 Google Sheet（建議先匯出備份）。')) {
                 resetToSeed();
                 setMsg('已重設為空白範本');
               }
             }}
-            className={`${btn} border border-rose-200 text-rose-600 hover:bg-rose-50`}
           >
+            <Trash2 size={16} />
             清空資料
-          </button>
+          </Button>
         </div>
       </Card>
     </div>

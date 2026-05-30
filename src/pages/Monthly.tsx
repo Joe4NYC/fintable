@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Plus } from 'lucide-react';
+import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { StatTile } from '../components/StatTile';
 import { MonthlyForm } from '../components/MonthlyForm';
@@ -17,6 +19,22 @@ export function Monthly() {
 
   const avgIn = averageIncome(data.monthly);
   const avgOut = averageExpense(data.monthly);
+
+  // 最新月 vs 上月（真實時序；monthly 已依月份排序）
+  const n = data.monthly.length;
+  const last = n >= 1 ? data.monthly[n - 1] : null;
+  const prev = n >= 2 ? data.monthly[n - 2] : null;
+  const makeDelta = (curr: number, before: number, higherIsGood: boolean) => {
+    const diff = curr - before;
+    const direction = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+    const good = diff === 0 ? true : higherIsGood ? diff > 0 : diff < 0;
+    const text = `${diff >= 0 ? '+' : ''}${formatCurrency(diff, 'HKD')}`;
+    return { text, direction: direction as 'up' | 'down' | 'flat', good, label: '較上月' };
+  };
+  const incomeDelta = last && prev ? makeDelta(last.income, prev.income, true) : undefined;
+  const expenseDelta = last && prev ? makeDelta(last.expense, prev.expense, false) : undefined;
+  const netDelta =
+    last && prev ? makeDelta(last.income - last.expense, prev.income - prev.expense, true) : undefined;
 
   const openAdd = () => {
     setEditing(null);
@@ -40,12 +58,13 @@ export function Monthly() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-        <StatTile label="平均月收入" value={formatCurrency(avgIn, 'HKD')} />
-        <StatTile label="平均月支出" value={formatCurrency(avgOut, 'HKD')} />
+        <StatTile label="平均月收入" value={formatCurrency(avgIn, 'HKD')} delta={incomeDelta} />
+        <StatTile label="平均月支出" value={formatCurrency(avgOut, 'HKD')} delta={expenseDelta} />
         <StatTile
           label="平均月結餘"
           value={formatCurrency(avgIn - avgOut, 'HKD')}
           tone={avgIn - avgOut >= 0 ? 'positive' : 'negative'}
+          delta={netDelta}
         />
       </div>
 
@@ -62,14 +81,15 @@ export function Monthly() {
         title="每月收支紀錄"
         action={
           !showForm && (
-            <button onClick={openAdd} className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-              + 新增
-            </button>
+            <Button onClick={openAdd}>
+              <Plus size={16} />
+              新增
+            </Button>
           )
         }
       >
         {showForm && (
-          <div className="mb-5 rounded-xl bg-slate-50 p-4">
+          <div className="mb-5 rounded-xl bg-surface-2 p-4">
             <MonthlyForm initial={editing ?? undefined} onSubmit={submit} onCancel={close} />
           </div>
         )}

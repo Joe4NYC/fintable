@@ -1,5 +1,7 @@
+import { X } from 'lucide-react';
 import type { BudgetItem } from '../types';
 import { formatNumber } from '../utils/format';
+import { fieldClass } from './formStyles';
 
 interface BudgetEditorProps {
   title: string;
@@ -8,12 +10,11 @@ interface BudgetEditorProps {
   accent: 'income' | 'expense';
 }
 
-const field =
-  'rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20';
+const field = fieldClass.replace('py-2', 'py-1.5');
 
 export function BudgetEditor({ title, items, onChange, accent }: BudgetEditorProps) {
   const total = items.reduce((acc, i) => acc + i.amount, 0);
-  const totalColor = accent === 'income' ? 'text-emerald-600' : 'text-rose-600';
+  const totalColor = accent === 'income' ? 'text-brand' : 'text-danger';
 
   const update = (idx: number, patch: Partial<BudgetItem>) =>
     onChange(items.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
@@ -23,7 +24,7 @@ export function BudgetEditor({ title, items, onChange, accent }: BudgetEditorPro
   return (
     <div>
       <div className="mb-3 flex items-baseline justify-between">
-        <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
+        <h3 className="text-sm font-semibold text-content">{title}</h3>
         <span className={`text-sm font-semibold tabular-nums ${totalColor}`}>{formatNumber(total)}</span>
       </div>
       <div className="space-y-2">
@@ -42,8 +43,8 @@ export function BudgetEditor({ title, items, onChange, accent }: BudgetEditorPro
               className={`${field} w-28 text-right`}
               placeholder="0"
             />
-            <button onClick={() => remove(idx)} className="text-xs text-rose-400 hover:text-rose-600" aria-label="刪除">
-              ✕
+            <button onClick={() => remove(idx)} className="text-content-faint hover:text-danger" aria-label="刪除">
+              <X size={16} />
             </button>
           </div>
         ))}

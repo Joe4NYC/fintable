@@ -40,7 +40,7 @@ export function Budget() {
       <Card title="預算 vs 實際" subtitle="預算為固定設定，實際為歷史月平均">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-left text-xs text-slate-400">
+            <tr className="border-b border-line text-left text-xs text-content-faint">
               <th className="py-2 font-medium"></th>
               <th className="py-2 text-right font-medium">預算</th>
               <th className="py-2 text-right font-medium">實際（月均）</th>
@@ -72,11 +72,11 @@ function Row({
   const diff = actual - budget;
   const good = higherIsGood ? diff >= 0 : diff <= 0;
   return (
-    <tr className="border-b border-slate-100">
-      <td className="py-2 font-medium text-slate-700">{label}</td>
-      <td className="py-2 text-right tabular-nums text-slate-600">{formatCurrency(budget, 'HKD')}</td>
-      <td className="py-2 text-right tabular-nums text-slate-600">{formatCurrency(actual, 'HKD')}</td>
-      <td className={`py-2 text-right tabular-nums ${good ? 'text-emerald-600' : 'text-rose-600'}`}>
+    <tr className="border-b border-line">
+      <td className="py-2 font-medium text-content">{label}</td>
+      <td className="py-2 text-right tabular-nums text-content-muted">{formatCurrency(budget, 'HKD')}</td>
+      <td className="py-2 text-right tabular-nums text-content-muted">{formatCurrency(actual, 'HKD')}</td>
+      <td className={`py-2 text-right tabular-nums ${good ? 'text-brand' : 'text-danger'}`}>
         {diff >= 0 ? '+' : ''}
         {formatCurrency(diff, 'HKD')}
       </td>

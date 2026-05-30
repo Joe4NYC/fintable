@@ -6,7 +6,7 @@ interface Slice {
   value: number;
 }
 
-const COLORS = ['#2563eb', '#38bdf8', '#f59e0b', '#10b981'];
+const COLORS = ['#38bdf8', '#5b6678', '#f59e0b', '#10b981'];
 
 export function AllocationDonut({ data }: { data: Slice[] }) {
   const total = data.reduce((acc, d) => acc + d.value, 0);
@@ -31,7 +31,14 @@ export function AllocationDonut({ data }: { data: Slice[] }) {
             const pct = total ? ((num / total) * 100).toFixed(1) : '0';
             return [`${formatNumber(num)}（${pct}%）`, ''];
           }}
-          contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }}
+          contentStyle={{
+            borderRadius: 12,
+            background: '#141b2d',
+            border: '1px solid #232c40',
+            color: '#e6edf6',
+            fontSize: 12,
+          }}
+          itemStyle={{ color: '#e6edf6' }}
         />
       </PieChart>
     </ResponsiveContainer>

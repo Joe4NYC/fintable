@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import type { FinanceData } from '../types';
+import { Button } from '../components/Button';
 import { FinanceProvider } from './FinanceContext';
 import { clearCloudConfig, getCloudConfig, pull, push, readCache } from './cloud';
 
@@ -75,23 +77,23 @@ export function CloudProvider({ children }: { children: ReactNode }) {
   };
 
   if (status === 'loading') {
-    return <div className="grid min-h-screen place-items-center text-slate-400">與 Google Sheet 同步中…</div>;
+    return <div className="grid min-h-screen place-items-center text-content-faint">與 Google Sheet 同步中…</div>;
   }
 
   if (status === 'error' && !data) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-100 px-4">
-        <div className="w-full max-w-sm rounded-2xl bg-white p-7 text-center shadow-sm ring-1 ring-slate-200">
-          <div className="text-3xl">⚠️</div>
-          <h1 className="mt-2 text-base font-bold text-slate-800">無法連接 Google Sheet</h1>
-          <p className="mt-2 break-words text-xs text-slate-400">{lastError}</p>
+      <div className="grid min-h-screen place-items-center bg-bg px-4">
+        <div className="w-full max-w-sm rounded-card bg-surface p-7 text-center shadow-card ring-1 ring-line">
+          <div className="flex justify-center">
+            <AlertTriangle size={32} className="text-warn" />
+          </div>
+          <h1 className="mt-2 text-base font-bold text-content">無法連接 Google Sheet</h1>
+          <p className="mt-2 break-words text-xs text-content-faint">{lastError}</p>
           <div className="mt-5 flex justify-center gap-3">
-            <button onClick={load} className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-              重試
-            </button>
-            <button onClick={disconnect} className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50">
+            <Button onClick={load}>重試</Button>
+            <Button variant="secondary" onClick={disconnect}>
               重新輸入連接資料
-            </button>
+            </Button>
           </div>
         </div>
       </div>

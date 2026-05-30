@@ -13,7 +13,7 @@ export function MonthlyTable({ monthly, onEdit, onDelete }: MonthlyTableProps) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-slate-200 text-left text-xs text-slate-400">
+          <tr className="border-b border-line text-left text-xs text-content-faint">
             <th className="py-2 pr-4 font-medium">月份</th>
             <th className="py-2 pr-4 text-right font-medium">收入</th>
             <th className="py-2 pr-4 text-right font-medium">支出</th>
@@ -26,19 +26,19 @@ export function MonthlyTable({ monthly, onEdit, onDelete }: MonthlyTableProps) {
           {monthly.map((m) => {
             const ratio = savingsRatio(m);
             return (
-              <tr key={m.id} className="border-b border-slate-100 hover:bg-slate-50">
-                <td className="py-2 pr-4 font-medium text-slate-700">{formatMonth(m.month)}</td>
-                <td className="py-2 pr-4 text-right tabular-nums text-emerald-600">{formatNumber(m.income)}</td>
-                <td className="py-2 pr-4 text-right tabular-nums text-rose-600">{formatNumber(m.expense)}</td>
-                <td className={`py-2 pr-4 text-right tabular-nums ${ratio < 0 ? 'text-rose-600' : 'text-slate-600'}`}>
+              <tr key={m.id} className="border-b border-line hover:bg-surface-2">
+                <td className="py-2 pr-4 font-medium text-content">{formatMonth(m.month)}</td>
+                <td className="py-2 pr-4 text-right tabular-nums text-brand">{formatNumber(m.income)}</td>
+                <td className="py-2 pr-4 text-right tabular-nums text-danger">{formatNumber(m.expense)}</td>
+                <td className={`py-2 pr-4 text-right tabular-nums ${ratio < 0 ? 'text-danger' : 'text-content-muted'}`}>
                   {formatPercent(ratio, 0)}
                 </td>
-                <td className="py-2 pr-4 text-slate-500">{m.note}</td>
+                <td className="py-2 pr-4 text-content-muted">{m.note}</td>
                 <td className="py-2 text-right whitespace-nowrap">
                   <button onClick={() => onEdit(m)} className="text-xs text-brand hover:underline">
                     編輯
                   </button>
-                  <button onClick={() => onDelete(m.id)} className="ml-3 text-xs text-rose-500 hover:underline">
+                  <button onClick={() => onDelete(m.id)} className="ml-3 text-xs text-danger hover:underline">
                     刪除
                   </button>
                 </td>
@@ -47,7 +47,7 @@ export function MonthlyTable({ monthly, onEdit, onDelete }: MonthlyTableProps) {
           })}
           {monthly.length === 0 && (
             <tr>
-              <td colSpan={6} className="py-8 text-center text-sm text-slate-400">
+              <td colSpan={6} className="py-8 text-center text-sm text-content-faint">
                 尚無紀錄，按上方「新增」開始記帳。
               </td>
             </tr>
