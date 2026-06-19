@@ -59,6 +59,39 @@ export function goalProgress(goal: Goal, currentAssets: number, today = new Date
   return { achievementRatio, toGo, daysLeft };
 }
 
+export interface GoalProjection {
+  alreadyMet: boolean; // 已達標
+  reachable: boolean; // 依目前儲蓄速度是否會達標
+  monthsNeeded: number | null; // 還需多少個月（向上取整）
+  projectedDate: string | null; // 預計達標年月 "YYYY-MM"
+  diffMonths: number | null; // 對比目標日期：負＝提前，正＝延遲（目標日期無效則 null）
+}
+
+// 依「平均每月結餘」推算目標預計達標日，並與目標日期比較。
+export function projectGoal(
+  goal: Goal,
+  currentNet: number,
+  avgMonthlyNet: number,
+  today = new Date()
+): GoalProjection {
+  if (currentNet >= goal.targetAmount) {
+    return { alreadyMet: true, reachable: true, monthsNeeded: 0, projectedDate: null, diffMonths: null };
+  }
+  if (avgMonthlyNet <= 0) {
+    return { alreadyMet: false, reachable: false, monthsNeeded: null, projectedDate: null, diffMonths: null };
+  }
+  const monthsNeeded = Math.ceil((goal.targetAmount - currentNet) / avgMonthlyNet);
+  const proj = new Date(today.getFullYear(), today.getMonth() + monthsNeeded, 1);
+  const projectedDate = `${proj.getFullYear()}-${String(proj.getMonth() + 1).padStart(2, '0')}`;
+
+  let diffMonths: number | null = null;
+  const target = new Date(goal.targetDate);
+  if (!isNaN(target.getTime())) {
+    diffMonths = (proj.getFullYear() - target.getFullYear()) * 12 + (proj.getMonth() - target.getMonth());
+  }
+  return { alreadyMet: false, reachable: true, monthsNeeded, projectedDate, diffMonths };
+}
+
 // 預算每月可支配 = 固定收入 − 固定支出
 export function disposable(fixedIncome: BudgetItem[], fixedExpense: BudgetItem[]): number {
   return sum(fixedIncome) - sum(fixedExpense);

@@ -29,6 +29,13 @@ export interface Assets {
   loans: Loan[];
 }
 
+// 資產快照：每次儲存時由 Apps Script 自動記錄（每日一行），用來畫真實的淨資產走勢
+export interface AssetSnapshot {
+  date: string; // YYYY-MM-DD
+  totalAssets: number;
+  netAssets: number;
+}
+
 export interface FinanceData {
   settings: { currency: string; locale: string };
   goals: Goal[];

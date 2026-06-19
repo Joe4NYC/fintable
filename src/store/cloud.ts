@@ -1,7 +1,8 @@
-import type { FinanceData } from '../types';
+import type { AssetSnapshot, FinanceData } from '../types';
 
 const CLOUD_KEY = 'fintable.cloud.v1';
 const CACHE_KEY = 'fintable.cloudcache.v1';
+const SNAP_CACHE_KEY = 'fintable.snapcache.v1';
 
 export interface CloudConfig {
   url: string; // Apps Script /exec 網址
@@ -44,6 +45,22 @@ export function writeCache(data: FinanceData): void {
   }
 }
 
+export function readSnapCache(): AssetSnapshot[] {
+  try {
+    const raw = localStorage.getItem(SNAP_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as AssetSnapshot[]) : [];
+  } catch {
+    return [];
+  }
+}
+function writeSnapCache(snapshots: AssetSnapshot[]): void {
+  try {
+    localStorage.setItem(SNAP_CACHE_KEY, JSON.stringify(snapshots));
+  } catch {
+    /* ignore */
+  }
+}
+
 // 用 text/plain 避免 CORS 預檢；Apps Script 以 e.postData.contents 讀取 body
 async function call<T>(cfg: CloudConfig, payload: Record<string, unknown>): Promise<T> {
   const res = await fetch(cfg.url, {
@@ -64,13 +81,46 @@ export async function ping(cfg: CloudConfig): Promise<boolean> {
   return true;
 }
 
-export async function pull(cfg: CloudConfig): Promise<FinanceData> {
-  const out = await call<{ data: FinanceData }>(cfg, { action: 'load' });
-  writeCache(out.data);
-  return out.data;
+export interface LoadResult {
+  data: FinanceData;
+  snapshots: AssetSnapshot[];
+  updatedAt: string | null;
 }
 
-export async function push(cfg: CloudConfig, data: FinanceData): Promise<void> {
-  await call(cfg, { action: 'save', data });
-  writeCache(data);
+export async function pull(cfg: CloudConfig): Promise<LoadResult> {
+  const out = await call<{ data: FinanceData; snapshots?: AssetSnapshot[]; updatedAt?: string | null }>(cfg, {
+    action: 'load',
+  });
+  writeCache(out.data);
+  const snapshots = out.snapshots || [];
+  writeSnapCache(snapshots);
+  return { data: out.data, snapshots, updatedAt: out.updatedAt ?? null };
+}
+
+// push 結果：成功（帶新版本戳與快照），或偵測到雲端有較新資料（衝突）
+export type PushResult =
+  | { ok: true; updatedAt: string | null; snapshots: AssetSnapshot[] }
+  | { ok: false; conflict: true };
+
+export async function push(
+  cfg: CloudConfig,
+  data: FinanceData,
+  baseUpdatedAt: string | null,
+  opts?: { force?: boolean }
+): Promise<PushResult> {
+  try {
+    const out = await call<{ updatedAt?: string | null; snapshots?: AssetSnapshot[] }>(cfg, {
+      action: 'save',
+      data,
+      baseUpdatedAt: baseUpdatedAt ?? undefined,
+      force: opts?.force ? true : undefined,
+    });
+    writeCache(data);
+    const snapshots = out.snapshots || [];
+    writeSnapCache(snapshots);
+    return { ok: true, updatedAt: out.updatedAt ?? null, snapshots };
+  } catch (err) {
+    if ((err as Error).message === 'conflict') return { ok: false, conflict: true };
+    throw err;
+  }
 }

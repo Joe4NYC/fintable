@@ -4,6 +4,7 @@ import { StatTile } from '../components/StatTile';
 import { AllocationDonut } from '../components/charts/AllocationDonut';
 import { Sparkline } from '../components/charts/Sparkline';
 import { useFinance } from '../store/FinanceContext';
+import { useSync } from '../store/CloudProvider';
 import {
   cashAmount,
   goalProgress,
@@ -17,6 +18,7 @@ import { formatCurrency, formatNumber, formatPercent, parseDateMs } from '../uti
 
 export function Dashboard() {
   const { data } = useFinance();
+  const sync = useSync();
   const { assets, goals } = data;
 
   const total = totalAssets(assets);
@@ -29,9 +31,11 @@ export function Dashboard() {
   const investRatio = allocTotal ? invest / allocTotal : 0;
   const cashRatio = allocTotal ? cash / allocTotal : 0;
 
-  // 累計結餘走勢（真實時序，供 hero sparkline）
+  // Hero sparkline：優先用真實的淨資產快照走勢；資料不足時退回收支累計。
+  const netSeries = (sync?.snapshots ?? []).map((s) => s.netAssets);
   let running = 0;
   const savingsTrend = data.monthly.map((m) => (running += m.income - m.expense));
+  const trend = netSeries.length >= 2 ? netSeries : savingsTrend;
 
   return (
     <div className="space-y-6">
@@ -50,9 +54,9 @@ export function Dashboard() {
               </p>
               <p className="mt-1 text-xs text-content-faint">總資產 − 借貸</p>
             </div>
-            {savingsTrend.length >= 2 && (
+            {trend.length >= 2 && (
               <div className="h-14 w-32 shrink-0">
-                <Sparkline values={savingsTrend} />
+                <Sparkline values={trend} />
               </div>
             )}
           </div>

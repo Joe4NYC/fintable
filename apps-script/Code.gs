@@ -21,6 +21,7 @@ const TABS = {
   assets: '資產',
   loans: '借貸',
   settings: '設定',
+  snapshots: '資產快照',
 };
 
 function doGet() {
@@ -33,11 +34,30 @@ function doPost(e) {
     if (body.token !== SECRET) return json({ ok: false, error: 'unauthorized' });
 
     if (body.action === 'load') {
-      return json({ ok: true, data: readAll() });
+      return json({
+        ok: true,
+        data: readAll(),
+        snapshots: readSnapshots(),
+        updatedAt: getUpdatedAt() || null,
+      });
     }
     if (body.action === 'save') {
-      writeAll(body.data || {});
-      return json({ ok: true });
+      // 多裝置寫入保護：避免兩部裝置互相覆蓋
+      const lock = LockService.getScriptLock();
+      if (!lock.tryLock(10000)) return json({ ok: false, error: 'busy' });
+      try {
+        const stored = getUpdatedAt();
+        if (!body.force && body.baseUpdatedAt !== undefined && stored && body.baseUpdatedAt !== stored) {
+          return json({ ok: false, error: 'conflict' });
+        }
+        writeAll(body.data || {});
+        upsertSnapshot((body.data || {}).assets || {});
+        const ts = new Date().toISOString();
+        setUpdatedAt(ts);
+        return json({ ok: true, updatedAt: ts, snapshots: readSnapshots() });
+      } finally {
+        lock.releaseLock();
+      }
     }
     return json({ ok: false, error: 'unknown action' });
   } catch (err) {
@@ -210,4 +230,46 @@ function writeAll(data) {
     ['currency', String(s.currency || 'HKD')],
     ['locale', String(s.locale || 'zh-HK')],
   ]);
+}
+
+// ---------- 資產快照（每日一行，儲存時自動記錄） ----------
+function readSnapshots() {
+  const sh = sheetByName(TABS.snapshots, ['日期', '總資產', '淨資產']);
+  return rows(sh)
+    .filter((r) => String(r[0]).trim() !== '')
+    .map((r) => ({ date: toDateStr(r[0]), totalAssets: num(r[1]), netAssets: num(r[2]) }))
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
+function upsertSnapshot(assets) {
+  const sh = sheetByName(TABS.snapshots, ['日期', '總資產', '淨資產']);
+  const total = num(assets.investmentTotal) + num(assets.liquidCash);
+  const loans = (assets.loans || []).reduce(function (acc, l) {
+    return acc + num(l.amount);
+  }, 0);
+  const net = total - loans;
+  const today = toDateStr(new Date());
+
+  const all = rows(sh);
+  let rowIdx = -1;
+  for (let i = 0; i < all.length; i++) {
+    if (toDateStr(all[i][0]) === today) {
+      rowIdx = i + 2;
+      break;
+    }
+  }
+  if (rowIdx === -1) {
+    sh.appendRow([today, total, net]);
+  } else {
+    sh.getRange(rowIdx, 1, 1, 3).setValues([[today, total, net]]);
+  }
+}
+
+// ---------- 版本戳（多裝置寫入保護用） ----------
+function getUpdatedAt() {
+  return PropertiesService.getScriptProperties().getProperty('updatedAt') || '';
+}
+
+function setUpdatedAt(ts) {
+  PropertiesService.getScriptProperties().setProperty('updatedAt', ts);
 }

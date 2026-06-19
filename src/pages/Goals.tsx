@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { CalendarClock, Plus } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
 import { fieldClass } from '../components/formStyles';
 import { useFinance } from '../store/FinanceContext';
 import type { Goal } from '../types';
-import { goalProgress, netAssets } from '../utils/finance';
-import { formatCurrency, formatDate, formatPercent, parseDateMs } from '../utils/format';
+import { averageExpense, averageIncome, goalProgress, netAssets, projectGoal } from '../utils/finance';
+import { formatCurrency, formatDate, formatMonth, formatPercent, parseDateMs } from '../utils/format';
 
 const field = fieldClass;
 
@@ -59,6 +59,7 @@ export function Goals() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const total = netAssets(data.assets);
+  const avgNet = averageIncome(data.monthly) - averageExpense(data.monthly);
 
   return (
     <div className="space-y-6">
@@ -91,6 +92,7 @@ export function Goals() {
             .sort((a, b) => parseDateMs(a.targetDate) - parseDateMs(b.targetDate))
             .map((g) => {
             const p = goalProgress(g, total);
+            const proj = projectGoal(g, total, avgNet);
             if (editingId === g.id) {
               return (
                 <div key={g.id} className="rounded-xl bg-surface-2 p-4">
@@ -139,6 +141,31 @@ export function Goals() {
                     <p className="text-content-faint">剩餘天數</p>
                     <p className="font-semibold text-content">{isFinite(p.daysLeft) ? p.daysLeft : '—'} 日</p>
                   </div>
+                </div>
+                <div className="mt-3 flex items-center gap-1.5 border-t border-line pt-2.5 text-xs">
+                  <CalendarClock size={14} className="shrink-0 text-content-faint" />
+                  {proj.alreadyMet ? (
+                    <span className="font-medium text-brand">已達標 🎉</span>
+                  ) : !proj.reachable ? (
+                    <span className="text-content-faint">平均月結餘 ≤ 0，依目前速度無法估算達標日</span>
+                  ) : (
+                    <span className="text-content-muted">
+                      依目前儲蓄速度，預計{' '}
+                      <strong className="text-content">{formatMonth(proj.projectedDate!)}</strong> 達標
+                      {proj.diffMonths !== null && (
+                        <>
+                          {' · '}
+                          {proj.diffMonths <= 0 ? (
+                            <span className="font-medium text-brand">
+                              較目標{proj.diffMonths === 0 ? '準時' : `早 ${-proj.diffMonths} 個月`}
+                            </span>
+                          ) : (
+                            <span className="font-medium text-warn">較目標遲 {proj.diffMonths} 個月</span>
+                          )}
+                        </>
+                      )}
+                    </span>
+                  )}
                 </div>
               </div>
             );

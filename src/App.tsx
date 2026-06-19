@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  AlertTriangle,
   Cloud,
   CloudOff,
   LayoutDashboard,
@@ -35,6 +36,7 @@ const syncLabel: Record<SyncStatus, { text: string; cls: string; icon: LucideIco
   synced: { text: '已同步', cls: 'bg-brand/15 text-brand', icon: Cloud },
   offline: { text: '離線（用快取）', cls: 'bg-warn/15 text-warn', icon: CloudOff },
   error: { text: '同步失敗', cls: 'bg-danger/15 text-danger', icon: CloudOff },
+  conflict: { text: '版本衝突', cls: 'bg-warn/15 text-warn', icon: AlertTriangle },
 };
 
 function SyncBadge() {
